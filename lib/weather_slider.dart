@@ -23,7 +23,7 @@ class WeatherSliderState extends State<WeatherSlider> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(seconds: 2), () => getTempereture());
+      Future.delayed(const Duration(seconds: 4), () => getTempereture());
     });
   }
 
