@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 // ignore: must_be_immutable
 class WeatherSlider extends StatefulWidget {
   List listWeather;
-  WeatherSlider(this.listWeather, {super.key});
+  Function? fn;
+  WeatherSlider(this.listWeather, this.fn, {super.key});
 
   @override
   State<WeatherSlider> createState() => WeatherSliderState();
@@ -22,21 +23,19 @@ class WeatherSliderState extends State<WeatherSlider> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(seconds: 2), () => getTempereture());
-    });
+    getTempereture();
   }
 
-  void getTempereture() {
+  Future<void> getTempereture() async {
+    await widget.fn!();
     setState(() {
       if (widget.listWeather.isNotEmpty) {
-        temperetureFirst = widget.listWeather.elementAt(0) + '';
-        temperetureSecond = widget.listWeather.elementAt(1) + '';
-        temperetureThirty = widget.listWeather.elementAt(2) + '';
-        temperetureFourty = widget.listWeather.elementAt(3) + '';
-        temperetureFifty = widget.listWeather.elementAt(4) + '';
-        temperetureSixty = widget.listWeather.elementAt(5) + '';
-        temperetureSeventy = widget.listWeather.elementAt(6) + '';
+        temperetureFirst = widget.listWeather[0] + '';
+        temperetureSecond = widget.listWeather[1] + '';
+        temperetureThirty = widget.listWeather[2] + '';
+        temperetureFourty = widget.listWeather[3] + '';
+        temperetureFifty = widget.listWeather[4] + '';
+        temperetureSixty = widget.listWeather[5] + '';
       }
     });
   }
@@ -60,8 +59,8 @@ class WeatherSliderState extends State<WeatherSlider> {
                   ),
                   const Text("ПН",
                       style: TextStyle(color: Colors.white, fontSize: 15)),
-                  Text('$temperetureSecond*C',
-                      style: TextStyle(color: Colors.white))
+                  Text('$temperetureFirst*C',
+                      style: const TextStyle(color: Colors.white))
                 ],
               ),
             ),
@@ -76,7 +75,7 @@ class WeatherSliderState extends State<WeatherSlider> {
                   ),
                   const Text("ВТ",
                       style: TextStyle(color: Colors.white, fontSize: 15)),
-                  Text('$temperetureThirty*C',
+                  Text('$temperetureSecond*C',
                       style: const TextStyle(color: Colors.white, fontSize: 15))
                 ],
               ),
@@ -92,7 +91,7 @@ class WeatherSliderState extends State<WeatherSlider> {
                   ),
                   const Text("СР",
                       style: TextStyle(color: Colors.white, fontSize: 15)),
-                  Text('$temperetureFourty*C',
+                  Text('$temperetureThirty*C',
                       style: const TextStyle(color: Colors.white))
                 ],
               ),
@@ -108,7 +107,7 @@ class WeatherSliderState extends State<WeatherSlider> {
                   ),
                   const Text("ЧТ",
                       style: TextStyle(color: Colors.white, fontSize: 15)),
-                  Text('$temperetureFifty*C',
+                  Text('$temperetureFourty*C',
                       style: const TextStyle(color: Colors.white))
                 ],
               ),
@@ -127,7 +126,7 @@ class WeatherSliderState extends State<WeatherSlider> {
                     style: TextStyle(color: Colors.white, fontSize: 15),
                   ),
                   Text(
-                    '$temperetureSixty*C',
+                    '$temperetureFifty*C',
                     style: const TextStyle(color: Colors.white),
                   )
                 ],
@@ -144,7 +143,7 @@ class WeatherSliderState extends State<WeatherSlider> {
                   ),
                   const Text('СБ',
                       style: TextStyle(color: Colors.white, fontSize: 15)),
-                  Text('$temperetureSeventy*C',
+                  Text('$temperetureSixty*C',
                       style: const TextStyle(color: Colors.white))
                 ],
               ),

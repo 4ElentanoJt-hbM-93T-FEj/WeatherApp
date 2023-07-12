@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
@@ -9,7 +10,10 @@ import './weather_slider.dart';
 import './position.dart' as determine_postition;
 import './WeatherResponse.dart';
 
-void main() {
+import 'package:yandex_geocoder/yandex_geocoder.dart';
+// import 'package:geocoding/geocoding.dart';
+
+Future<void> main() async {
   runApp(const MyWidget());
 }
 
@@ -27,19 +31,17 @@ class _MyWidgetState extends State<MyWidget> {
   var resUrl = '';
   Map<String, dynamic>? currentWeather;
   double? temp = 0.0;
-  var weather;
   List<String> hourlyTime = [];
   List<double>? windSpeed = [];
   String? farengete;
   List resList = [];
   DateTime dtStart = DateTime.now();
   DateTime dtEnd = DateTime.now().add(const Duration(days: 6));
+  String? _currentCity = '';
+  final YandexGeocoder geo =
+      YandexGeocoder(apiKey: '88990150-045a-4787-b513-7e08090b0409');
 
   Map<String, String>? listWeather = {};
-
-  // String startDate = DateFormat("yyyy-MM-dd").format(DateTime.now());
-  // String endDate = DateFormat("yyyy-MM-dd")
-  //     .format(DateTime.now().add(const Duration(days: 7)));
 
   // Обращение к классу получения местоположения устройства.
   var determinePosition =
@@ -49,6 +51,7 @@ class _MyWidgetState extends State<MyWidget> {
   void initState() {
     super.initState();
     getRequest();
+
     print("123");
   }
 
@@ -59,7 +62,7 @@ class _MyWidgetState extends State<MyWidget> {
     // Координтаы устройства. (они всегда будут иметь значения)
     latitude = _currentPosition!.latitude;
     longitude = _currentPosition!.longitude;
-
+    getAddress();
     String url =
         'https://api.open-meteo.com/v1/forecast?latitude=$latitude&longitude=$longitude&hourly=temperature_2m,relativehumidity_2m,precipitation,weathercode,windspeed_10m&current_weather=true&timezone=Europe%2FMoscow&forecast_days=14';
     // 'https://api.open-meteo.com/v1/forecast?latitude=&longitude=&hourly=temperature_2m,relativehumidity_2m,precipitation,weathercode,windspeed_10m&current_weather=true&timezone=auto&start_date=$startDate&end_date=$endDate';
@@ -67,7 +70,7 @@ class _MyWidgetState extends State<MyWidget> {
     final response = await http.get(Uri.parse(url)).then(
       (value) {
         print('+++');
-        // print(jsonDecode(value.body));
+        print(jsonDecode(value.body));
 
         if (value.statusCode == 200) {
           WeatherResponse weather =
@@ -75,41 +78,10 @@ class _MyWidgetState extends State<MyWidget> {
           // print(weather.currentWeather?.temperature);
 
           hourlyTime = weather.hourly!.time!;
-          windSpeed = weather.hourly!.windspeed10m!;
+          // windSpeed = weather.hourly!.windspeed10m!;
 
-          print(hourlyTime);
-          print(windSpeed);
-          // weather.hourly!.temperature2m!;
-          // print(dtStart.day);
-          // print(dtEnd.day);
-          // print('${dtStart.day}T');
-          // print('${dtEnd.day}T');
-          // print(hourlyTime);
-          // print(hourlyTime.indexOf('${dtStart.day}T'));
-          // print(hourlyTime.indexOf('${dtEnd.day}T'));
-
-          // 2023-07-11T17:00
-          //
           String start = "";
           String end = "";
-
-          // if (dtStart.month < 10 && dtStart.hour < 10) {
-          //   start =
-          //       '${dtStart.year}-0${dtStart.month}-${dtStart.day}T0${dtStart.hour}:00';
-          //   end =
-          //       '${dtEnd.year}-0${dtEnd.month}-${dtEnd.day}T0${dtEnd.hour}:00';
-          // } else if (dtStart.hour < 10) {
-          //   start =
-          //       '${dtStart.year}-0${dtStart.month}-${dtStart.day}T0${dtStart.hour}:00';
-          //   end =
-          //       '${dtEnd.year}-0${dtEnd.month}-${dtEnd.day}T0${dtEnd.hour}:00';
-          // } else if (dtStart.hour > 10) {
-          //   start =
-          //       '${dtStart.year}-0${dtStart.month}-${dtStart.day}T${dtStart.hour}:00';
-          //   end = '${dtEnd.year}-0${dtEnd.month}-${dtEnd.day}T${dtEnd.hour}:00';
-          // } else if (dtStart.month < 10){
-
-          // }
           String firstDay = '';
           String secondDay = '';
           String thirtytDay = '';
@@ -172,15 +144,9 @@ class _MyWidgetState extends State<MyWidget> {
             for (int i = hourlyTime.indexOf(start);
                 i <= hourlyTime.indexOf(end);
                 i++) {
-              print(
-                  "${weather.hourly!.time![i]} - ${weather.hourly!.temperature2m![i]}");
+              // print(
+              //     "${weather.hourly!.time![i]} - ${weather.hourly!.temperature2m![i]}");
               if (item == weather.hourly!.time![i]) {
-                // try {
-                //   windSpeed?.add(weather.hourly!.windspeed10m![i]);
-                // } catch (e) {
-                //   null;
-                // }
-
                 listWeather?.addEntries({
                   weather.hourly!.time![i]:
                       weather.hourly!.temperature2m![i].toString()
@@ -198,30 +164,61 @@ class _MyWidgetState extends State<MyWidget> {
           print('Вывод окончен');
           print(resList);
           print('Вывод окончен');
-          // print(start);
-          // print(end);
-          // // print(
-          // //     '${dtStart.year}-0${dtStart.month}-${dtStart.day}T${dtStart.hour}:00 Текущая дата');
-          // // print(
-          // //     '${dtEnd.year}-0${dtEnd.month}-${dtEnd.day}T${dtEnd.hour}:00 Конечная дата');
-          // print(hourlyTime.indexOf(start));
-          // print(
-          //     "${weather.hourly!.time![1]} - ${weather.hourly!.temperature2m![1]}");
-          // print(hourlyTime.indexOf(end));
-          // print(
-          //     "${weather.hourly!.time![145]} - ${weather.hourly!.temperature2m![145]}");
-
-          print('Вывод окончен');
 
           setState(() {
             temp = weather.currentWeather?.temperature;
-            farengete = (temp! * 9 / 5 + 32).toString();
+            farengete = (temp! * 9 / 5 + 32).toInt().toString();
             print(farengete);
           });
         }
       },
     );
-    // print(hourlyTime);
+  }
+
+  //Обратная конвертация из координат в адрес
+  Future<void> getAddress() async {
+    var address = 'null';
+    var latLong = 'null';
+
+    final GeocodeResponse _address = await geo.getGeocode(
+      GeocodeRequest(
+        geocode: PointGeocode(latitude: latitude!, longitude: longitude!),
+      ),
+    );
+
+    if (_address.firstAddress!.formatted.toString().contains('область')) {
+      address = _address.firstAddress!.formatted.toString().split(', ')[2];
+    } else {
+      address = _address.firstAddress!.formatted.toString().split(', ')[1];
+    }
+
+    print(_address.firstAddress!.formatted.toString());
+    setState(() {
+      _currentCity = address;
+    });
+
+    // final GeocodeResponse _latLong = await geo.getGeocode(
+    //   GeocodeRequest(
+    //     geocode: AddressGeocode(
+    //       address: 'Москва, 4-я Тверская-Ямская улица, 7',
+    //     ),
+    //   ),
+    // );
+    // latLong = _latLong.firstPoint?.pos ?? 'null';
+    // print(latLong);
+
+    // final server = await shelf_io.serve(
+    //   proxyHandler('https://geocode.xyz'),
+    //   '47.88.62.42',
+    //   80,
+    // );
+
+    // print('Proxying at http://${server.address.host}:${server.port}');
+
+    // var address = await GeoCode()
+    //     .reverseGeocoding(latitude: latitude!, longitude: longitude!);
+    // _currentCity = address.city;
+    // print(address.city);
   }
 
   // Запрос на использование местоположения
@@ -253,9 +250,9 @@ class _MyWidgetState extends State<MyWidget> {
               height: 650,
               child: Column(
                 children: [
-                  const Text(
-                    'Магнитогорск',
-                    style: TextStyle(fontSize: 35, color: Colors.white),
+                  Text(
+                    '$_currentCity',
+                    style: const TextStyle(fontSize: 35, color: Colors.white),
                   ),
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 20),
@@ -265,12 +262,11 @@ class _MyWidgetState extends State<MyWidget> {
                       height: 65,
                     ),
                   ),
-                  Container(
-                    child: Text(
-                      '$temp°C / $farengete°F',
-                      style: const TextStyle(fontSize: 35, color: Colors.white),
-                    ),
+                  Text(
+                    '$temp°C / $farengete°F',
+                    style: const TextStyle(fontSize: 35, color: Colors.white),
                   ),
+
                   // Text(
                   //   'Скорость ветра: ${windSpeed![1]}',
                   //   style: const TextStyle(fontSize: 20, color: Colors.white),
@@ -285,7 +281,7 @@ class _MyWidgetState extends State<MyWidget> {
                   const SizedBox(
                     height: 100,
                   ),
-                  WeatherSlider(resList),
+                  WeatherSlider(resList, getRequest),
                 ],
               ),
             ),
