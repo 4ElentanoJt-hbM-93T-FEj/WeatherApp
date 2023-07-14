@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 // import 'package:flutter/scheduler.dart';
 
@@ -18,7 +20,26 @@ class WeatherSliderState extends State<WeatherSlider> {
   String temperetureFourty = '';
   String temperetureFifty = '';
   String temperetureSixty = '';
-  String temperetureSeventy = '';
+
+  String imgDays1 = 'assets/images/icon-clouds-and-sun.jpg';
+  String imgDays2 = 'assets/images/icon-clouds-and-sun.jpg';
+  String imgDays3 = 'assets/images/icon-clouds-and-sun.jpg';
+  String imgDays4 = 'assets/images/icon-clouds-and-sun.jpg';
+  String imgDays5 = 'assets/images/icon-clouds-and-sun.jpg';
+  String imgDays6 = 'assets/images/icon-clouds-and-sun.jpg';
+  // Map<List<int>, String> weatherCodes = {
+  //   [0]: 'Чистое небо',
+  //   [1, 2, 3]: 'Ясно',
+  //   [45, 48]: 'Туман',
+  //   [51, 53, 55]: 'Морось',
+  //   [56, 57]: 'Ледяная морось',
+  //   [61, 63, 65]: 'Дождь',
+  //   [66, 67]: 'Ледяной дождь',
+  //   [71, 73, 75]: 'Снегопад',
+  //   [77]: 'Снежные зерна',
+  //   [80, 81, 82]: 'Ливневые дожди',
+  //   [85, 86]: 'Снег'
+  // };
 
   @override
   void initState() {
@@ -26,18 +47,76 @@ class WeatherSliderState extends State<WeatherSlider> {
     getTempereture();
   }
 
+  String? getWeatherImg(int code) {
+    switch (code) {
+      case 0:
+        return 'assets/images/icon-clouds-and-sun.jpg';
+
+      case 1:
+      case 2:
+      case 3:
+        return 'assets/images/icon-sun.jpg';
+
+      case 45:
+      case 48:
+        return 'assets/images/fog.jpg';
+
+      case 51:
+      case 53:
+      case 55:
+        return 'assets/images/rain.jpg';
+      case 56:
+      case 57:
+        return 'assets/images/freezing-rain.jpg';
+      case 61:
+      case 63:
+      case 65:
+        return 'assets/images/rain.jpg';
+
+      case 66:
+      case 67:
+        return 'assets/freezing-rain.jpg';
+
+      case 71:
+      case 73:
+      case 75:
+        return 'assets/images/snow-storm.jpg';
+
+      case 77:
+        return 'assets/images/snow-storm.jpg';
+
+      case 80:
+      case 81:
+      case 82:
+        return 'assets/images/rain.jpg';
+
+      case 85:
+      case 86:
+        return 'assets/images/snow-storm.jpg';
+    }
+    return 'assets/images/rain.jpg';
+  }
+
   Future<void> getTempereture() async {
     await widget.fn!();
-    setState(() {
-      if (widget.listWeather.isNotEmpty) {
-        temperetureFirst = widget.listWeather[0] + '';
-        temperetureSecond = widget.listWeather[1] + '';
-        temperetureThirty = widget.listWeather[2] + '';
-        temperetureFourty = widget.listWeather[3] + '';
-        temperetureFifty = widget.listWeather[4] + '';
-        temperetureSixty = widget.listWeather[5] + '';
-      }
-    });
+    setState(
+      () {
+        if (widget.listWeather.isNotEmpty) {
+          temperetureFirst = widget.listWeather[0][0] + '';
+          temperetureSecond = widget.listWeather[1][0] + '';
+          temperetureThirty = widget.listWeather[2][0] + '';
+          temperetureFourty = widget.listWeather[3][0] + '';
+          temperetureFifty = widget.listWeather[4][0] + '';
+          temperetureSixty = widget.listWeather[5][0] + '';
+          imgDays1 = getWeatherImg(int.parse(widget.listWeather[0][1]))!;
+          imgDays2 = getWeatherImg(int.parse(widget.listWeather[1][1]))!;
+          imgDays3 = getWeatherImg(int.parse(widget.listWeather[2][1]))!;
+          imgDays4 = getWeatherImg(int.parse(widget.listWeather[3][1]))!;
+          imgDays5 = getWeatherImg(int.parse(widget.listWeather[4][1]))!;
+          imgDays6 = getWeatherImg(int.parse(widget.listWeather[5][1]))!;
+        }
+      },
+    );
   }
 
   @override
@@ -53,7 +132,7 @@ class WeatherSliderState extends State<WeatherSlider> {
               child: Column(
                 children: [
                   Image.asset(
-                    'images/rain_icon.jpg',
+                    imgDays1,
                     width: 45,
                     height: 45,
                   ),
@@ -69,7 +148,7 @@ class WeatherSliderState extends State<WeatherSlider> {
               child: Column(
                 children: [
                   Image.asset(
-                    'images/icon-clouds-and-sun.jpg',
+                    imgDays2,
                     width: 45,
                     height: 45,
                   ),
@@ -85,7 +164,7 @@ class WeatherSliderState extends State<WeatherSlider> {
               child: Column(
                 children: [
                   Image.asset(
-                    'images/icon-sun.jpg',
+                    imgDays3,
                     width: 45,
                     height: 45,
                   ),
@@ -101,7 +180,7 @@ class WeatherSliderState extends State<WeatherSlider> {
               child: Column(
                 children: [
                   Image.asset(
-                    'images/icon-sun.jpg',
+                    imgDays4,
                     width: 45,
                     height: 45,
                   ),
@@ -117,7 +196,7 @@ class WeatherSliderState extends State<WeatherSlider> {
               child: Column(
                 children: [
                   Image.asset(
-                    'images/icon-clouds-and-sun.jpg',
+                    imgDays5,
                     width: 45,
                     height: 45,
                   ),
@@ -137,7 +216,7 @@ class WeatherSliderState extends State<WeatherSlider> {
               child: Column(
                 children: [
                   Image.asset(
-                    'images/icon-clouds-and-sun.jpg',
+                    imgDays6,
                     width: 45,
                     height: 45,
                   ),

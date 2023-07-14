@@ -2,19 +2,17 @@
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
-
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import './weather_slider.dart';
 import './position.dart' as determine_postition;
 import './WeatherResponse.dart';
-
 import 'package:yandex_geocoder/yandex_geocoder.dart';
 // import 'package:geocoding/geocoding.dart';
 
 Future<void> main() async {
-  runApp(const MyWidget());
+  runApp(MyWidget());
 }
 
 class MyWidget extends StatefulWidget {
@@ -34,6 +32,7 @@ class _MyWidgetState extends State<MyWidget> {
   List<String> hourlyTime = [];
   List<double>? windSpeed = [];
   String? farengete;
+  String weatherImg = 'assets/images/icon-clouds-and-sun.jpg';
   List resList = [];
   DateTime dtStart = DateTime.now();
   DateTime dtEnd = DateTime.now().add(const Duration(days: 6));
@@ -41,7 +40,10 @@ class _MyWidgetState extends State<MyWidget> {
   final YandexGeocoder geo =
       YandexGeocoder(apiKey: '88990150-045a-4787-b513-7e08090b0409');
 
-  Map<String, String>? listWeather = {};
+  Map<String, List<String>>? listWeather = {};
+
+  Map<String, Map<String, int>>? weatherCode = {};
+  List weatherCodeList = [];
 
   // Обращение к классу получения местоположения устройства.
   var determinePosition =
@@ -51,10 +53,10 @@ class _MyWidgetState extends State<MyWidget> {
   void initState() {
     super.initState();
     getRequest();
-
     print("123");
   }
 
+  // Получение данных из Api погоды.
   Future<void> getRequest() async {
     // Получение местоположения устройства.
     _currentPosition = await determinePosition();
@@ -62,21 +64,22 @@ class _MyWidgetState extends State<MyWidget> {
     // Координтаы устройства. (они всегда будут иметь значения)
     latitude = _currentPosition!.latitude;
     longitude = _currentPosition!.longitude;
-    getAddress();
+    await getAddress();
     String url =
-        'https://api.open-meteo.com/v1/forecast?latitude=$latitude&longitude=$longitude&hourly=temperature_2m,relativehumidity_2m,precipitation,weathercode,windspeed_10m&current_weather=true&timezone=Europe%2FMoscow&forecast_days=14';
+        'https://api.open-meteo.com/v1/forecast?latitude=$latitude&longitude=$longitude&hourly=temperature_2m,relativehumidity_2m,precipitation,weathercode,windspeed_10m&current_weather=true&timezone=Europe%2FMoscow';
     // 'https://api.open-meteo.com/v1/forecast?latitude=&longitude=&hourly=temperature_2m,relativehumidity_2m,precipitation,weathercode,windspeed_10m&current_weather=true&timezone=auto&start_date=$startDate&end_date=$endDate';
 
     final response = await http.get(Uri.parse(url)).then(
       (value) {
         print('+++');
-        print(jsonDecode(value.body));
+        // print(jsonDecode(value.body));
 
         if (value.statusCode == 200) {
           WeatherResponse weather =
               WeatherResponse.fromJson(jsonDecode(value.body));
           // print(weather.currentWeather?.temperature);
 
+          // Информация
           hourlyTime = weather.hourly!.time!;
           // windSpeed = weather.hourly!.windspeed10m!;
 
@@ -147,9 +150,12 @@ class _MyWidgetState extends State<MyWidget> {
               // print(
               //     "${weather.hourly!.time![i]} - ${weather.hourly!.temperature2m![i]}");
               if (item == weather.hourly!.time![i]) {
+                // Температура по дням и статус погоды
                 listWeather?.addEntries({
-                  weather.hourly!.time![i]:
-                      weather.hourly!.temperature2m![i].toString()
+                  weather.hourly!.time![i]: [
+                    weather.hourly!.temperature2m![i].toString(),
+                    weather.hourly!.weathercode![i].toString()
+                  ]
                 }.entries);
               }
             }
@@ -158,17 +164,14 @@ class _MyWidgetState extends State<MyWidget> {
           print('Вывод из списка дней окончен');
           print(listWeather);
 
-          for (var i in listWeather!.values) {
-            resList.add(i);
-          }
-          print('Вывод окончен');
-          print(resList);
-          print('Вывод окончен');
-
+          print('Итоговые данные по погоде - $resList');
           setState(() {
+            weatherImg = getWeatherImg(weather.currentWeather!.weathercode!)!;
             temp = weather.currentWeather?.temperature;
             farengete = (temp! * 9 / 5 + 32).toInt().toString();
-            print(farengete);
+            for (var i in listWeather!.values) {
+              resList.add(i);
+            }
           });
         }
       },
@@ -180,33 +183,36 @@ class _MyWidgetState extends State<MyWidget> {
     var address = 'null';
     var latLong = 'null';
 
-    final GeocodeResponse _address = await geo.getGeocode(
+    // Получение полного адреса по координатам
+    final GeocodeResponse getAddress = await geo.getGeocode(
       GeocodeRequest(
         geocode: PointGeocode(latitude: latitude!, longitude: longitude!),
       ),
     );
 
-    if (_address.firstAddress!.formatted.toString().contains('область')) {
-      address = _address.firstAddress!.formatted.toString().split(', ')[2];
+    if (getAddress.firstAddress!.formatted.toString().contains('область')) {
+      address = getAddress.firstAddress!.formatted.toString().split(', ')[2];
     } else {
-      address = _address.firstAddress!.formatted.toString().split(', ')[1];
+      address = getAddress.firstAddress!.formatted.toString().split(', ')[1];
     }
 
-    print(_address.firstAddress!.formatted.toString());
+    print(getAddress.firstAddress!.formatted.toString());
     setState(() {
       _currentCity = address;
     });
 
-    // final GeocodeResponse _latLong = await geo.getGeocode(
-    //   GeocodeRequest(
-    //     geocode: AddressGeocode(
-    //       address: 'Москва, 4-я Тверская-Ямская улица, 7',
-    //     ),
-    //   ),
-    // );
-    // latLong = _latLong.firstPoint?.pos ?? 'null';
-    // print(latLong);
+    // Получение координат по адресу
+    final GeocodeResponse getLatLong = await geo.getGeocode(
+      GeocodeRequest(
+        geocode: AddressGeocode(
+          address: 'Москва',
+        ),
+      ),
+    );
+    latLong = getLatLong.firstPoint!.pos.toString();
+    print('Координаты именованного города $latLong');
 
+    // Запрос имени города через прокси
     // final server = await shelf_io.serve(
     //   proxyHandler('https://geocode.xyz'),
     //   '47.88.62.42',
@@ -219,6 +225,56 @@ class _MyWidgetState extends State<MyWidget> {
     //     .reverseGeocoding(latitude: latitude!, longitude: longitude!);
     // _currentCity = address.city;
     // print(address.city);
+  }
+
+  String? getWeatherImg(int code) {
+    switch (code) {
+      case 0:
+        return 'assets/images/icon-clouds-and-sun.jpg';
+
+      case 1:
+      case 2:
+      case 3:
+        return 'assets/images/icon-sun.jpg';
+
+      case 45:
+      case 48:
+        return 'assets/images/fog.jpg';
+
+      case 51:
+      case 53:
+      case 55:
+        return 'assets/images/rain.jpg';
+      case 56:
+      case 57:
+        return 'assets/images/freezing-rain.jpg';
+      case 61:
+      case 63:
+      case 65:
+        return 'assets/images/rain.jpg';
+
+      case 66:
+      case 67:
+        return 'assets/freezing-rain.jpg';
+
+      case 71:
+      case 73:
+      case 75:
+        return 'assets/images/snow-storm.jpg';
+
+      case 77:
+        return 'assets/images/snow-storm.jpg';
+
+      case 80:
+      case 81:
+      case 82:
+        return 'assets/images/rain.jpg';
+
+      case 85:
+      case 86:
+        return 'assets/images/snow-storm.jpg';
+    }
+    return 'assets/freezing-rain.jpg';
   }
 
   // Запрос на использование местоположения
@@ -236,9 +292,23 @@ class _MyWidgetState extends State<MyWidget> {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          elevation: 0.0,
+          backgroundColor: Colors.transparent,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.arrow_circle_left),
+              onPressed: () async {
+                await getRequest();
+                // WeatherSlider(resList, getRequest).fn;
+                // handle the press
+              },
+            ),
+          ],
+        ),
         body: Stack(children: [
           Image.asset(
-            'images/bg2.jpg',
+            'assets/images/bg2.jpg',
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
@@ -257,7 +327,7 @@ class _MyWidgetState extends State<MyWidget> {
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 20),
                     child: Image.asset(
-                      'images/icon-clouds-and-sun.jpg',
+                      weatherImg,
                       width: 65,
                       height: 65,
                     ),
